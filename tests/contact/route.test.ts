@@ -24,7 +24,7 @@ describe('POST /api/contact Route Handler', () => {
     vi.clearAllMocks()
   })
 
-  const createRequest = (body: any, ip: string = '127.0.0.1') => {
+  const createRequest = (body: unknown, ip: string = '127.0.0.1') => {
     return new NextRequest('http://localhost/api/contact', {
       method: 'POST',
       body: JSON.stringify(body),

@@ -16,8 +16,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // 3. Parse JSON Body
-    let body: any
+    let body: unknown
     try {
       body = await request.json()
     } catch {
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    const { name, email, message, honeypot } = body || {}
+    const { name, email, message, honeypot } = (body as Record<string, unknown>) || {}
 
     // 4. Honeypot check: Silent success if filled
     if (honeypot && typeof honeypot === 'string' && honeypot.trim().length > 0) {
