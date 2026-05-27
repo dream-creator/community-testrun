@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     alias: {
-      '@': path.resolve(__dirname, './'),
+      '@/': path.resolve(__dirname, './') + '/',
     },
   },
 })
