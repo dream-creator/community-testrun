@@ -1,5 +1,5 @@
 import { expect, test, describe } from 'vitest'
-import { validateContactInput } from '@/lib/contact/validator'
+import { validateContactInput, VALIDATION_ERRORS } from '@/lib/contact/validator'
 
 const VALID_EMAIL = 'jane@example.com'
 const VALID_MESSAGE = 'Hello, this is a valid message.'
@@ -28,7 +28,7 @@ describe('Input Validator', () => {
       message: VALID_MESSAGE,
     })
     expect(resultShort.isValid).toBe(false)
-    expect(resultShort.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
+    expect(resultShort.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
 
     const resultInvalidChar = validateContactInput({
       name: 'Jane Doe #1',
@@ -36,7 +36,25 @@ describe('Input Validator', () => {
       message: VALID_MESSAGE,
     })
     expect(resultInvalidChar.isValid).toBe(false)
-    expect(resultInvalidChar.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
+    expect(resultInvalidChar.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
+  })
+
+  test('fails whitespace-only inputs', () => {
+    const resultNameWhitespace = validateContactInput({
+      name: '     ',
+      email: VALID_EMAIL,
+      message: VALID_MESSAGE,
+    })
+    expect(resultNameWhitespace.isValid).toBe(false)
+    expect(resultNameWhitespace.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
+
+    const resultMsgWhitespace = validateContactInput({
+      name: VALID_NAME,
+      email: VALID_EMAIL,
+      message: '         ',
+    })
+    expect(resultMsgWhitespace.isValid).toBe(false)
+    expect(resultMsgWhitespace.errors.message).toBe(VALIDATION_ERRORS.MESSAGE_INVALID)
   })
 
   test('fails invalid emails', () => {
@@ -46,7 +64,7 @@ describe('Input Validator', () => {
       message: VALID_MESSAGE,
     })
     expect(resultInvalid.isValid).toBe(false)
-    expect(resultInvalid.errors.email).toBe('Please provide a valid email address.')
+    expect(resultInvalid.errors.email).toBe(VALIDATION_ERRORS.EMAIL_INVALID)
   })
 
   test('fails short or long messages', () => {
@@ -56,7 +74,7 @@ describe('Input Validator', () => {
       message: 'Too short',
     })
     expect(resultShort.isValid).toBe(false)
-    expect(resultShort.errors.message).toBe('Message must be between 10 and 1000 characters long.')
+    expect(resultShort.errors.message).toBe(VALIDATION_ERRORS.MESSAGE_INVALID)
   })
 
   describe('Boundary checks', () => {
@@ -87,7 +105,7 @@ describe('Input Validator', () => {
         message: VALID_MESSAGE,
       })
       expect(result.isValid).toBe(false)
-      expect(result.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
+      expect(result.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
     })
 
     test('message of length 10 and 1000 should pass', () => {
@@ -117,7 +135,7 @@ describe('Input Validator', () => {
         message: msg1001,
       })
       expect(result.isValid).toBe(false)
-      expect(result.errors.message).toBe('Message must be between 10 and 1000 characters long.')
+      expect(result.errors.message).toBe(VALIDATION_ERRORS.MESSAGE_INVALID)
     })
   })
 
@@ -125,29 +143,29 @@ describe('Input Validator', () => {
     test('null and undefined payload', () => {
       const resultNull = validateContactInput(null)
       expect(resultNull.isValid).toBe(false)
-      expect(resultNull.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
-      expect(resultNull.errors.email).toBe('Please provide a valid email address.')
-      expect(resultNull.errors.message).toBe('Message must be between 10 and 1000 characters long.')
+      expect(resultNull.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
+      expect(resultNull.errors.email).toBe(VALIDATION_ERRORS.EMAIL_INVALID)
+      expect(resultNull.errors.message).toBe(VALIDATION_ERRORS.MESSAGE_INVALID)
 
       const resultUndefined = validateContactInput(undefined)
       expect(resultUndefined.isValid).toBe(false)
-      expect(resultUndefined.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
-      expect(resultUndefined.errors.email).toBe('Please provide a valid email address.')
-      expect(resultUndefined.errors.message).toBe('Message must be between 10 and 1000 characters long.')
+      expect(resultUndefined.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
+      expect(resultUndefined.errors.email).toBe(VALIDATION_ERRORS.EMAIL_INVALID)
+      expect(resultUndefined.errors.message).toBe(VALIDATION_ERRORS.MESSAGE_INVALID)
     })
 
     test('empty object payload {}', () => {
       const result = validateContactInput({})
       expect(result.isValid).toBe(false)
-      expect(result.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
-      expect(result.errors.email).toBe('Please provide a valid email address.')
-      expect(result.errors.message).toBe('Message must be between 10 and 1000 characters long.')
+      expect(result.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
+      expect(result.errors.email).toBe(VALIDATION_ERRORS.EMAIL_INVALID)
+      expect(result.errors.message).toBe(VALIDATION_ERRORS.MESSAGE_INVALID)
     })
 
     test('non-object payloads (string, number, boolean)', () => {
       const resultString = validateContactInput('invalid-payload')
       expect(resultString.isValid).toBe(false)
-      expect(resultString.errors.name).toBe('Name must be between 2 and 50 characters long and contain only valid characters.')
+      expect(resultString.errors.name).toBe(VALIDATION_ERRORS.NAME_INVALID)
 
       const resultNumber = validateContactInput(12345)
       expect(resultNumber.isValid).toBe(false)
