@@ -67,6 +67,27 @@ describe('Input Validator', () => {
     expect(resultInvalid.errors.email).toBe(VALIDATION_ERRORS.EMAIL_INVALID)
   })
 
+  test('fails emails exceeding 254 characters', () => {
+    const longEmailLocal = 'a'.repeat(245)
+    const longEmail = `${longEmailLocal}@test.com` // 245 + 9 = 254 chars - should pass
+    const toolongEmail = `${longEmailLocal}x@test.com` // 246 + 9 = 255 chars - should fail
+
+    const resultPass = validateContactInput({
+      name: VALID_NAME,
+      email: longEmail,
+      message: VALID_MESSAGE,
+    })
+    expect(resultPass.isValid).toBe(true)
+
+    const resultFail = validateContactInput({
+      name: VALID_NAME,
+      email: toolongEmail,
+      message: VALID_MESSAGE,
+    })
+    expect(resultFail.isValid).toBe(false)
+    expect(resultFail.errors.email).toBe(VALIDATION_ERRORS.EMAIL_INVALID)
+  })
+
   test('fails short or long messages', () => {
     const resultShort = validateContactInput({
       name: VALID_NAME,
@@ -175,10 +196,31 @@ describe('Input Validator', () => {
     })
   })
 
-  describe('Special characters in names', () => {
+  describe('Special and international characters in names', () => {
     test('allows digits, hyphens, and apostrophes', () => {
       const names = ["Jane-Doe", "O'Connor", "John 3rd", "d'Artagnan-Jean"]
       for (const name of names) {
+        const result = validateContactInput({
+          name,
+          email: VALID_EMAIL,
+          message: VALID_MESSAGE,
+        })
+        expect(result.isValid).toBe(true)
+      }
+    })
+
+    test('allows international names with accented and unicode characters', () => {
+      const internationalNames = [
+        "René",
+        "Müller",
+        "François",
+        "Štěpán",
+        "Chloë",
+        "María José",
+        "Åse",
+        "Øyvind"
+      ]
+      for (const name of internationalNames) {
         const result = validateContactInput({
           name,
           email: VALID_EMAIL,

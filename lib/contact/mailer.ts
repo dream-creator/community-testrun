@@ -18,19 +18,23 @@ function escapeHtml(text: string): string {
 export async function sendContactEmail(data: { name: string; email: string; message: string }): Promise<void> {
   const { name, email, message } = data
 
-  const host = process.env.SMTP_HOST
-  const portStr = process.env.SMTP_PORT
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-  const receiver = process.env.CONTACT_RECEIVER
-  const sender = process.env.CONTACT_SENDER
+  const host = process.env.SMTP_HOST?.trim()
+  const portStr = process.env.SMTP_PORT?.trim()
+  const user = process.env.SMTP_USER?.trim()
+  const pass = process.env.SMTP_PASS?.trim()
+  const receiver = process.env.CONTACT_RECEIVER?.trim()
+  const sender = process.env.CONTACT_SENDER?.trim()
 
   if (!host || !portStr || !user || !pass || !receiver || !sender) {
     throw new Error('SMTP environment variables are not fully configured.')
   }
 
+  if (!/^\d+$/.test(portStr)) {
+    throw new Error('SMTP_PORT is not a valid number.')
+  }
+
   const port = parseInt(portStr, 10)
-  if (isNaN(port)) {
+  if (port < 1 || port > 65535) {
     throw new Error('SMTP_PORT is not a valid number.')
   }
 
@@ -45,7 +49,8 @@ export async function sendContactEmail(data: { name: string; email: string; mess
     })
   }
 
-  const subject = `New Contact Form Submission from ${name}`
+  const sanitizedName = name.replace(/[\r\n]/g, '')
+  const subject = `New Contact Form Submission from ${sanitizedName}`
 
   const textContent = `
 New Contact Form Submission

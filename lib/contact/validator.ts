@@ -45,8 +45,8 @@ export function validateContactInput(data: unknown): ValidationResult {
   const email = payload.email
   const message = payload.message
 
-  // Name: Required, 2-50 chars, alphanumeric + spaces + apostrophes + hyphens
-  const nameRegex = /^[a-zA-Z0-9 '-]+$/
+  // Name: Required, 2-50 chars, alphanumeric + spaces + apostrophes + hyphens + unicode support
+  const nameRegex = /^[\p{L}\p{N} '-]+$/u
   const trimmedName = typeof name === 'string' ? name.trim() : ''
   if (
     typeof name !== 'string' ||
@@ -57,10 +57,14 @@ export function validateContactInput(data: unknown): ValidationResult {
     errors.name = VALIDATION_ERRORS.NAME_INVALID
   }
 
-  // Email: Required, standard email structure
+  // Email: Required, standard email structure, max 254 chars
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const trimmedEmail = typeof email === 'string' ? email.trim() : ''
-  if (typeof email !== 'string' || !emailRegex.test(trimmedEmail)) {
+  if (
+    typeof email !== 'string' ||
+    trimmedEmail.length > 254 ||
+    !emailRegex.test(trimmedEmail)
+  ) {
     errors.email = VALIDATION_ERRORS.EMAIL_INVALID
   }
 

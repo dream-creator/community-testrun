@@ -71,6 +71,38 @@ describe('Mailer Service', () => {
     expect(mockSendMail).toHaveBeenCalledTimes(2)
   })
 
+  test('resetTransporter clears the cached transporter, forcing recreate on subsequent call', async () => {
+    const mailData = {
+      name: 'Alice',
+      email: 'alice@example.com',
+      message: 'This is a message from Alice.',
+    }
+
+    await sendContactEmail(mailData)
+    expect(mockCreateTransport).toHaveBeenCalledTimes(1)
+
+    resetTransporter()
+
+    await sendContactEmail(mailData)
+    expect(mockCreateTransport).toHaveBeenCalledTimes(2)
+  })
+
+  test('sanitizes name by removing carriage returns and newlines in email subject', async () => {
+    const mailData = {
+      name: 'Alice\r\nHeaderInjection\nMalicious',
+      email: 'alice@example.com',
+      message: 'This is a message from Alice.',
+    }
+
+    await sendContactEmail(mailData)
+
+    expect(mockSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: 'New Contact Form Submission from AliceHeaderInjectionMalicious',
+      })
+    )
+  })
+
   describe('Environment configuration validation', () => {
     const requiredEnvKeys = [
       'SMTP_HOST',
@@ -100,6 +132,25 @@ describe('Mailer Service', () => {
         // Restore original value
         process.env[key] = originalValue
       })
+
+      test(`throws an error when ${key} is empty string after trimming`, async () => {
+        const mailData = {
+          name: 'Alice',
+          email: 'alice@example.com',
+          message: 'Hello!',
+        }
+
+        // Set the environment variable to spaces
+        const originalValue = process.env[key]
+        process.env[key] = '   '
+
+        await expect(sendContactEmail(mailData)).rejects.toThrow(
+          'SMTP environment variables are not fully configured.'
+        )
+
+        // Restore original value
+        process.env[key] = originalValue
+      })
     })
 
     test('throws an error when SMTP_PORT is set to an invalid non-numeric string', async () => {
@@ -109,11 +160,28 @@ describe('Mailer Service', () => {
         message: 'Hello!',
       }
 
-      process.env.SMTP_PORT = 'abc'
+      process.env.SMTP_PORT = '587abc'
 
       await expect(sendContactEmail(mailData)).rejects.toThrow(
         'SMTP_PORT is not a valid number.'
       )
+    })
+
+    const invalidPorts = ['0', '-1', '70000']
+    invalidPorts.forEach((portVal) => {
+      test(`throws an error when SMTP_PORT is set to invalid port range: ${portVal}`, async () => {
+        const mailData = {
+          name: 'Alice',
+          email: 'alice@example.com',
+          message: 'Hello!',
+        }
+
+        process.env.SMTP_PORT = portVal
+
+        await expect(sendContactEmail(mailData)).rejects.toThrow(
+          'SMTP_PORT is not a valid number.'
+        )
+      })
     })
   })
 
