@@ -8,7 +8,6 @@ export const VALIDATION_ERRORS = {
   NAME_INVALID: 'Name must be between 2 and 50 characters long and contain only valid characters.',
   EMAIL_INVALID: 'Please provide a valid email address.',
   MESSAGE_INVALID: 'Message must be between 10 and 1000 characters long.',
-  PAYLOAD_INVALID: 'Invalid payload format.',
 } as const
 
 export interface ValidationResult {

@@ -13,9 +13,6 @@ vi.mock('@/lib/contact/rate-limiter', () => ({
 
 vi.mock('@/lib/contact/validator', () => ({
   validateContactInput: vi.fn(),
-  VALIDATION_ERRORS: {
-    PAYLOAD_INVALID: 'Invalid payload format.',
-  },
 }))
 
 vi.mock('@/lib/contact/mailer', () => ({
@@ -44,6 +41,21 @@ describe('POST /api/contact Route Handler', () => {
     expect(res.status).toBe(429)
     const json = await res.json()
     expect(json.error).toBe('Too many requests. Please try again later.')
+  })
+
+  test('returns 400 if JSON payload is malformed', async () => {
+    vi.mocked(rateLimiter.isRateLimited).mockReturnValue(false)
+    const req = new NextRequest('http://localhost/api/contact', {
+      method: 'POST',
+      body: 'invalid-json',
+      headers: {
+        'x-forwarded-for': '127.0.0.1',
+      },
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+    const json = await res.json()
+    expect(json.error).toBe('Invalid JSON payload')
   })
 
   test('returns silent 200 OK if honeypot is filled (bot submission)', async () => {

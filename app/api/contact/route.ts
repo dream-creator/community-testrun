@@ -3,7 +3,7 @@ import { rateLimiter } from '@/lib/contact/rate-limiter'
 import { validateContactInput } from '@/lib/contact/validator'
 import { sendContactEmail } from '@/lib/contact/mailer'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // 1. Resolve client IP
     const ip = request.headers.get('x-forwarded-for') || request.ip || '127.0.0.1'
@@ -17,8 +17,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Parse JSON Body
-    const body = await request.json().catch(() => ({}))
-    const { name, email, message, honeypot } = body
+    let body: any
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      )
+    }
+
+    const { name, email, message, honeypot } = body || {}
 
     // 4. Honeypot check: Silent success if filled
     if (honeypot && typeof honeypot === 'string' && honeypot.trim().length > 0) {
