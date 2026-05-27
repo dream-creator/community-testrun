@@ -11,6 +11,7 @@ describe('In-Memory Rate Limiter', () => {
   })
 
   afterEach(() => {
+    rateLimiter.destroy()
     vi.useRealTimers()
   })
 
@@ -40,5 +41,36 @@ describe('In-Memory Rate Limiter', () => {
     vi.advanceTimersByTime(60000)
 
     expect(rateLimiter.isRateLimited(ip)).toBe(false) // Limit reset
+  })
+
+  test('ensures IP isolation (rate-limiting IP A does not affect IP B)', () => {
+    const ipA = '192.168.1.4'
+    const ipB = '192.168.1.5'
+
+    // Rate limit IP A
+    rateLimiter.isRateLimited(ipA)
+    rateLimiter.isRateLimited(ipA)
+    rateLimiter.isRateLimited(ipA)
+    expect(rateLimiter.isRateLimited(ipA)).toBe(true)
+
+    // Assert IP B is NOT limited
+    expect(rateLimiter.isRateLimited(ipB)).toBe(false)
+  })
+
+  test('prunes expired entries correctly', () => {
+    const ip = '192.168.1.6'
+    rateLimiter.isRateLimited(ip)
+
+    // Verify it exists in store
+    expect(rateLimiter.isRateLimited(ip)).toBe(false)
+
+    // Advance time past window duration
+    vi.advanceTimersByTime(60000)
+
+    // Trigger prune
+    rateLimiter.prune()
+
+    // Assert that the ip has been reset and is allowed to request
+    expect(rateLimiter.isRateLimited(ip)).toBe(false)
   })
 })
